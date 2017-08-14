@@ -1,10 +1,18 @@
 # vae-celebA
 Variational auto-encoder trained on celebA . All rights reserved.
 Result:
+input image:  
 <div align="center">
-    <img src="https://files.slack.com/files-pri/T5SHUUKNJ-F6N75AJ5A/train_49_2914_random.png"/>  
-    <br>  
-    <em align="center">randomly generated images</em>  
+    <img src="
+https://github.com/yzwxx/vae-celebA/blob/master/input.png"/>  
+</div>  
+reconstruction:  
+<div align="center">
+    <img src="https://github.com/yzwxx/vae-celebA/blob/master/train_49_2914.png"/>  
+</div>  
+randomly generation:  
+<div align="center">
+    <img src="https://github.com/yzwxx/vae-celebA/blob/master/train_49_2914_random.png"/>  
 </div>  
 To run the code, you need to use Tensorflow and Tensorlayer([how to install tensorlayer?](https://github.com/zsdonghao/tensorlayer)).
 ## SOME NOTES
