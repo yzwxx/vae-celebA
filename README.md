@@ -13,8 +13,7 @@ randomly generation:
 <div align="center">
     <img src="https://github.com/yzwxx/vae-celebA/blob/master/train_49_2914_random.png"/>  
 </div>  
-To run the code, you need to use Tensorflow and Tensorlayer
-[how to install tensorlayer?](https://github.com/zsdonghao/tensorlayer).
+To run the code, you need to use Tensorflow and Tensorlayer[how to install Tensorlayer](https://github.com/zsdonghao/tensorlayer).
 
 ## SOME NOTES
 This is the code for the paper **[Deep Feature Consistent Variational Autoencoder](https://houxianxu.github.io/assets/project/dfcvae)**  
