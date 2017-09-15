@@ -7,25 +7,25 @@ Hereby we present place VAE and modified VAE model, both of which are trained on
 </div>
 
 <div align="center">
-    <img src="https://github.com/yzwxx/vae-celebA/blob/master/vae_recon.png"/>  
+    <img src="https://github.com/yzwxx/vae-celebA/blob/master/vae_recon.png" width="300"/>  
 </div>  
 
 <div align="center">
-    <img src="https://github.com/yzwxx/vae-celebA/blob/master/vae_random.png"/>  
+    <img src="https://github.com/yzwxx/vae-celebA/blob/master/vae_random.png" width="300"/>  
 </div>  
 
 ### DFC-VAE
 input image:  
 <div align="center">
-    <img src="https://github.com/yzwxx/vae-celebA/blob/master/input.png"/>  
+    <img src="https://github.com/yzwxx/vae-celebA/blob/master/input.png" width="300"/>  
 </div>  
 reconstruction:  
 <div align="center">
-    <img src="https://github.com/yzwxx/vae-celebA/blob/master/train_49_2914.png"/>  
+    <img src="https://github.com/yzwxx/vae-celebA/blob/master/train_49_2914.png" width="300"/>  
 </div>  
 randomly generation:  
 <div align="center">
-    <img src="https://github.com/yzwxx/vae-celebA/blob/master/train_49_2914_random.png"/>  
+    <img src="https://github.com/yzwxx/vae-celebA/blob/master/train_49_2914_random.png" width="300"/>  
 </div>  
 
 To run the code, you are required to install Tensorflow and Tensorlayer on your machine. **[how to install Tensorlayer](https://github.com/zsdonghao/tensorlayer)**  
