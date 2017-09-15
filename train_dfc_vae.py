@@ -19,7 +19,7 @@ os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"]="1"
 
 '''
-Tensorlayer implementation of VAE+GAN
+Tensorlayer implementation of DFC-VAE
 '''
 
 flags = tf.app.flags
@@ -47,21 +47,11 @@ flags.DEFINE_boolean("is_crop", True, "True for training, False for testing [Fal
 flags.DEFINE_boolean("load_pretrain",False, "Default to False;If start training on a pretrained net, choose True")
 FLAGS = flags.FLAGS
 
-# def balance(x,shift,mult):
-#     """
-#     Using this sigmoid to discourage one network overpowering the other
-#     """
-#     # return 1.0 
-#     return 1.0 / (1 + math.exp(-(x+shift)*mult))
 
 def main(_):
     pp.pprint(FLAGS.__flags)
 
     # prepare for the file directory
-    # if not os.path.exists(FLAGS.checkpoint_dir):
-    #     os.makedirs(FLAGS.checkpoint_dir)
-    # if not os.path.exists(FLAGS.sample_dir):
-    #     os.makedirs(FLAGS.sample_dir)
     tl.files.exists_or_mkdir(FLAGS.checkpoint_dir)
     tl.files.exists_or_mkdir(FLAGS.sample_dir)
 
@@ -75,10 +65,6 @@ def main(_):
         z_p = tf.random_normal(shape=(FLAGS.batch_size, FLAGS.z_dim), mean=0.0, stddev=1.0)
         # normal distribution for reparameterization trick
         eps = tf.random_normal(shape=(FLAGS.batch_size, FLAGS.z_dim), mean=0.0, stddev=1.0)
-        # learning rates for e,g,d
-        # lr_d = tf.placeholder(tf.float32, shape=[])
-        # lr_g = tf.placeholder(tf.float32, shape=[])
-        # lr_e = tf.placeholder(tf.float32, shape=[])
         lr_vae = tf.placeholder(tf.float32, shape=[])
 
 
@@ -102,15 +88,6 @@ def main(_):
         conv2,l1,l2,l3,_,_ = conv_layers_simple_api(net_in_fake,reuse=True)
         vgg2 = fc_layers(conv2,reuse=True)
 
-        # ----------------------discriminator----------------------
-        # for real images
-        # dis, dis_real_logits, hidden_output_real = discriminator(input_imgs, is_train=True, reuse=False)
-        # dis, dis_real_logits = discriminator(input_imgs, is_train=True, reuse=False)
-        # for fake images decoded from z
-        # _, dis_fake_z_logits, hidden_output_z = discriminator(gen0.outputs, is_train=True, reuse=True)
-        # _, dis_fake_z_logits = discriminator(gen0.outputs, is_train=True, reuse=True)
-        # for fake images decoded from z_p
-        # _, dis_fake_z_p_logits, hidden_output_z_p = discriminator(gen1.outputs, is_train=True, reuse=True)
 
         # ----------------------for samples----------------------
         gen2, gen2_logits = generator(z, is_train=False, reuse=True)
@@ -121,18 +98,11 @@ def main(_):
         reconstruction loss:
         use the learned similarity measurement in l-th layer of discriminator
         '''
-        # l_layer_loss = tf.reduce_mean(tf.square(hidden_output_z - hidden_output_real)) 
 
-        # hidden_loss = tf.reduce_mean(tf.square(z - z_fake))
-        # SSE_loss = tf.reduce_mean(tf.square(gen0.outputs - input_imgs))
-        # SSE_loss = tf.reduce_mean(tf.square(gen0.outputs - input_imgs))# /FLAGS.output_size/FLAGS.output_size/3
-        # print(type(tf.square(gen0.outputs - input_imgs)),tf.square(gen0.outputs - input_imgs).get_shape())
-        # print(type(tf.reduce_sum(tf.square(gen0.outputs - input_imgs),[1,2,3])),tf.reduce_sum(tf.square(gen0.outputs - input_imgs),[1,2,3]).get_shape())
         SSE_loss = tf.reduce_mean(tf.reduce_sum(tf.square(gen0.outputs - input_imgs),[1,2,3]))
         print(SSE_loss.get_shape(),type(SSE_loss))
 
-        # perceptual loss
-        # print(type(l1),type(l1_r))
+        # perceptual loss in feature space in VGG net
         p1_loss = tf.reduce_mean(tf.reduce_sum(tf.square(l1 - l1_r), [1,2,3]))
         p2_loss = tf.reduce_mean(tf.reduce_sum(tf.square(l2 - l2_r), [1,2,3]))
         p3_loss = tf.reduce_mean(tf.reduce_sum(tf.square(l3 - l3_r), [1,2,3]))
@@ -143,49 +113,24 @@ def main(_):
         then compute KL divergence between z and standard normal gaussian N(0,I) 
         '''
         # train_vae
-        # KL_loss = tf.reduce_mean(- 0.5 * tf.reduce_mean(1 + tf.clip_by_value(z_log_sigma_sq,-10.0,10.0) - 
-        #                 tf.square(tf.clip_by_value(z_mean,-10.0,10.0)) - tf.exp(tf.clip_by_value(z_log_sigma_sq,-10.0,10.0)),1))
-        # train_vae2
-        # KL_loss = tf.reduce_mean(- 0.5 * tf.reduce_sum(1 + z_log_sigma_sq - tf.square(z_mean) - tf.exp(z_log_sigma_sq),1))
         KL_loss = tf.reduce_mean(- 0.5 * tf.reduce_sum(1 + z_log_sigma_sq - tf.square(z_mean) - tf.exp(z_log_sigma_sq),1))
         print(KL_loss.get_shape(),type(KL_loss))
 
         ### important points! ###
-        # KL_weight = 1.0
-        # # LL_weight = 1.0 # 19th July 10:05
-        # LL_weight = 0.5 #0.5
-        # Loss_encoder = tf.clip_by_value(KL_weight * KL_loss + 0.5*(l_layer_loss + SSE_loss),-100.0,100.0)
-        # Loss_generator = tf.clip_by_value(0.5*(l_layer_loss + SSE_loss) + gan_g_loss,-100.0,100.0)
-
-        # VAE_loss = KL_loss + SSE_loss # train_vae
-        # VAE_loss = KL_loss + 0.5*p_loss 
-        # VAE_loss = KL_loss + SSE_loss
-        VAE_loss = KL_loss + 3e-5*p_loss
-
-        # Loss_encoder = tf.clip_by_value(KL_weight * KL_loss + SSE_loss,-100.0,100.0)
-        # Loss_generator = tf.clip_by_value(gan_g_loss + SSE_loss,-100.0,100.0)
-        # Loss_discriminator = tf.clip_by_value(gan_d_loss,-100.0,100.0)
+        style_content_weight = 3e-5 # you may need to tweak this weight for a different dataset
+        VAE_loss = KL_loss + style_content_weight*p_loss
 
         e_vars = tl.layers.get_variables_with_name('encoder',True,True)
         g_vars = tl.layers.get_variables_with_name('generator', True, True)
-        # d_vars = tl.layers.get_variables_with_name('discriminator', True, True)
         vae_vars = e_vars + g_vars
 
         print("-------encoder-------")
         net_out1.print_params(False)
         print("-------generator-------")
         gen0.print_params(False)
-        # print("-------discriminator--------")
-        # dis.print_params(False)
-        # print("---------------")
 
-        # optimizers for updating encoder, discriminator and generator
-        # e_optim = tf.train.AdamOptimizer(lr_e, beta1=FLAGS.beta1) \
-        #                   .minimize(Loss_encoder, var_list=e_vars)
-        # d_optim = tf.train.AdamOptimizer(lr_d, beta1=FLAGS.beta1) \
-        #                   .minimize(Loss_discriminator, var_list=d_vars)
-        # g_optim = tf.train.AdamOptimizer(lr_g, beta1=FLAGS.beta1) \
-        #                   .minimize(Loss_generator, var_list=g_vars)
+
+        # optimizers for updating encoder and generator
         vae_optim = tf.train.AdamOptimizer(lr_vae, beta1=FLAGS.beta1) \
                            .minimize(VAE_loss, var_list=vae_vars)
     sess = tf.InteractiveSession()
@@ -209,17 +154,6 @@ def main(_):
     samples_1 = FLAGS.sample_dir + "/" + FLAGS.test_number
     # samples_1 = FLAGS.sample_dir + "/test2"
     tl.files.exists_or_mkdir(samples_1) 
-
-    # if FLAGS.load_pretrain == True:
-    #     load_e_params = tl.files.load_npz(path=save_dir,name='/net_e.npz')
-    #     tl.files.assign_params(sess, load_e_params[:24], net_out1)
-    #     net_out1.print_params(True)
-    #     tl.files.assign_params(sess, np.concatenate((load_e_params[:24], load_e_params[30:]), axis=0), net_out2)
-    #     net_out2.print_params(True)
-
-    #     load_g_params = tl.files.load_npz(path=save_dir,name='/net_g.npz')
-    #     tl.files.assign_params(sess, load_g_params, gen0)
-    #     gen0.print_params(True)
     
     # get the list of absolute paths of all images in dataset
     data_files = glob(os.path.join("./data", FLAGS.dataset, "*.jpg"))
@@ -229,9 +163,6 @@ def main(_):
 
     ##========================= TRAIN MODELS ================================##
     iter_counter = 0
-    # errE = 0.0
-    # errG = 0.0
-    # errD = 0.0
 
     training_start_time = time.time()
     # use all images in dataset in every epoch
@@ -251,45 +182,10 @@ def main(_):
                 batch_images = np.array(batch).astype(np.float32)
 
                 start_time = time.time()
-                # e_current_lr = FLAGS.learning_rate * balance(np.mean(errE),-.5,15)
-                # g_current_lr = FLAGS.learning_rate * balance(np.mean(errG),-.5,15)
-                # d_current_lr = FLAGS.learning_rate * balance(np.mean(errD),-.5,15)
-                # e_current_lr = FLAGS.learning_rate
-                # g_current_lr = FLAGS.learning_rate
-                # d_current_lr = FLAGS.learning_rate
                 vae_current_lr = FLAGS.learning_rate
 
 
                 # update
-                # errE, _ = sess.run([Loss_encoder, e_optim], feed_dict={input_imgs: batch_images})
-                # errD, _ = sess.run([Loss_discriminator, d_optim], feed_dict={z: batch_z, real_images: batch_images})
-                # errG, _ = sess.run([Loss_generator, g_optim], feed_dict={z: batch_z})
-                # A, B, C, D, E = sess.run([KL_loss, l_layer_loss, gan_d_loss, gan_g_loss, SSE_loss], feed_dict = {input_imgs: batch_images, lr_e:e_current_lr, 
-                # 	lr_d:d_current_lr, lr_g:g_current_lr})
-                # print('------------------------------------')
-                # print("         KL_loss: %.8f, l_layer_loss: %.8f, gan_d_loss:%.8f, gan_g_loss:%.8f, SSE_loss:%.8f  " \
-                #         % (A, B, C, D, E))
-
-                # A, B, C, D, E = sess.run([KL_loss, hidden_loss, gan_d_loss, gan_g_loss, SSE_loss], feed_dict = {input_imgs: batch_images, lr_e:e_current_lr, 
-                #     lr_d:d_current_lr, lr_g:g_current_lr})
-                # print('------------------------------------')
-                # print("         KL_loss: %.8f, hidden_loss: %.8f, gan_d_loss:%.8f, gan_g_loss:%.8f, SSE_loss:%.8f  " \
-                #         % (A, B, C, D, E))
-
-                # A, B, C, D = sess.run([KL_loss, gan_d_loss, gan_g_loss, SSE_loss], feed_dict = {input_imgs: batch_images, lr_e:e_current_lr, 
-                #     lr_d:d_current_lr, lr_g:g_current_lr})
-                # print('------------------------------------')
-                # print("         KL_loss: %.8f, gan_d_loss:%.8f, gan_g_loss:%.8f, SSE_loss:%.8f  " \
-                #         % (A, B, C, D))
-
-                # errE, errG, errD, _, _, _ = sess.run([Loss_encoder, Loss_generator, Loss_discriminator, e_optim,
-                # 	g_optim, d_optim], feed_dict = {input_imgs: batch_images, lr_e:e_current_lr, 
-                # 	lr_d:d_current_lr, lr_g:g_current_lr})
-                # errD, _ = sess.run([Loss_discriminator, d_optim], feed_dict={input_imgs: batch_images, lr_d:d_current_lr})
-                # for i in range(2):
-                #     errG, _ = sess.run([Loss_generator, g_optim], feed_dict={input_imgs: batch_images, lr_g:g_current_lr})
-                # errE, _ = sess.run([Loss_encoder, e_optim], feed_dict={input_imgs: batch_images, lr_e:e_current_lr})
-
                 p, p1, p2, p3, kl, sse, errE, _ = sess.run([p_loss,p1_loss,p2_loss,p3_loss,KL_loss,SSE_loss,VAE_loss,vae_optim], feed_dict={input_imgs: batch_images, lr_vae:vae_current_lr})
 
 
