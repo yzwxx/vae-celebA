@@ -96,7 +96,7 @@ def main(_):
         ##========================= DEFINE TRAIN OPS =======================##
         ''''
         reconstruction loss:
-        use the learned similarity measurement in l-th layer of discriminator
+        use the learned similarity measurement in l-th layer(feature space) of pretrained VGG-16
         '''
 
         SSE_loss = tf.reduce_mean(tf.reduce_sum(tf.square(gen0.outputs - input_imgs),[1,2,3]))
