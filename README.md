@@ -3,8 +3,14 @@ Hereby we present place VAE and modified VAE model, both of which are trained on
 ## Result:
 ### plain VAE
 <div align="center">
-    <img src="https://github.com/yzwxx/vae-celebA/blob/master/vae_input.png"/>  
+    <img src="https://github.com/yzwxx/vae-celebA/blob/master/vae_input.png" width="48"/>  
+</div>
+
+<div align="center">
     <img src="https://github.com/yzwxx/vae-celebA/blob/master/vae_recon.png"/>  
+</div>  
+
+<div align="center">
     <img src="https://github.com/yzwxx/vae-celebA/blob/master/vae_random.png"/>  
 </div>  
 
