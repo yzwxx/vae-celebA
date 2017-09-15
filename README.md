@@ -4,13 +4,7 @@ Hereby we present place VAE and modified VAE model, both of which are trained on
 ### plain VAE
 <div align="center">
     <img src="https://github.com/yzwxx/vae-celebA/blob/master/vae_input.png"/>  
-</div>  
-reconstruction:  
-<div align="center">
     <img src="https://github.com/yzwxx/vae-celebA/blob/master/vae_recon.png"/>  
-</div>  
-randomly generation:  
-<div align="center">
     <img src="https://github.com/yzwxx/vae-celebA/blob/master/vae_random.png"/>  
 </div>  
 
