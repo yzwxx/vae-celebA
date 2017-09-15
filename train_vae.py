@@ -47,21 +47,11 @@ flags.DEFINE_boolean("is_crop", True, "True for training, False for testing [Fal
 flags.DEFINE_boolean("load_pretrain",False, "Default to False;If start training on a pretrained net, choose True")
 FLAGS = flags.FLAGS
 
-# def balance(x,shift,mult):
-#     """
-#     Using this sigmoid to discourage one network overpowering the other
-#     """
-#     # return 1.0 
-#     return 1.0 / (1 + math.exp(-(x+shift)*mult))
+
 
 def main(_):
     pp.pprint(FLAGS.__flags)
 
-    # prepare for the file directory
-    # if not os.path.exists(FLAGS.checkpoint_dir):
-    #     os.makedirs(FLAGS.checkpoint_dir)
-    # if not os.path.exists(FLAGS.sample_dir):
-    #     os.makedirs(FLAGS.sample_dir)
     tl.files.exists_or_mkdir(FLAGS.checkpoint_dir)
     tl.files.exists_or_mkdir(FLAGS.sample_dir)
 
@@ -75,10 +65,6 @@ def main(_):
         z_p = tf.random_normal(shape=(FLAGS.batch_size, FLAGS.z_dim), mean=0.0, stddev=1.0)
         # normal distribution for reparameterization trick
         eps = tf.random_normal(shape=(FLAGS.batch_size, FLAGS.z_dim), mean=0.0, stddev=1.0)
-        # learning rates for e,g,d
-        # lr_d = tf.placeholder(tf.float32, shape=[])
-        # lr_g = tf.placeholder(tf.float32, shape=[])
-        # lr_e = tf.placeholder(tf.float32, shape=[])
         lr_vae = tf.placeholder(tf.float32, shape=[])
 
 
@@ -90,103 +76,27 @@ def main(_):
         # z = z_mean + z_sigma * eps
         z = tf.add(z_mean, tf.multiply(tf.sqrt(tf.exp(z_log_sigma_sq)), eps)) # using reparameterization tricks
         gen0, _ = generator(z, is_train=True, reuse=False)
-        # as akara suggests (not working)
-        # _, _, z_mean_fake, z_log_sigma_sq_fake = encoder(gen0.outputs, is_train=True, reuse=True)
-        # z_fake = tf.add(z_mean_fake, tf.multiply(tf.sqrt(tf.exp(z_log_sigma_sq_fake)), eps))
-        # decode z_p
-        # gen1, _ = generator(z_p, is_train=True, reuse=True)
-
-        # ----------------------discriminator----------------------
-        # for real images
-        # dis, dis_real_logits, hidden_output_real = discriminator(input_imgs, is_train=True, reuse=False)
-        # dis, dis_real_logits = discriminator(input_imgs, is_train=True, reuse=False)
-        # for fake images decoded from z
-        # _, dis_fake_z_logits, hidden_output_z = discriminator(gen0.outputs, is_train=True, reuse=True)
-        # _, dis_fake_z_logits = discriminator(gen0.outputs, is_train=True, reuse=True)
-        # for fake images decoded from z_p
-        # _, dis_fake_z_p_logits, hidden_output_z_p = discriminator(gen1.outputs, is_train=True, reuse=True)
 
         # ----------------------for samples----------------------
         gen2, gen2_logits = generator(z, is_train=False, reuse=True)
         gen3, gen3_logits = generator(z_p, is_train=False, reuse=True)
 
         ##========================= DEFINE TRAIN OPS =======================##
-        # GAN loss
-        # d loss real with hard labels
-        # d_loss_real = tl.cost.sigmoid_cross_entropy(dis_real_logits, 
-        #                                                 tf.ones_like(dis_real_logits), name='d_real')
-
-        # smooth label for d loss real
-        # smoothing_mask_real = tf.truncated_normal(dis_real_logits.get_shape(), mean= 0.8, stddev=0.1)
-        # d_loss_real = tl.cost.sigmoid_cross_entropy(dis_real_logits, 
-        #                                     tf.ones_like(dis_real_logits) * smoothing_mask_real, name='d_real')
-
-
-        # # smoothing only on positive samples(improved-gan-techniques)
-        # d_loss_fake_z = tl.cost.sigmoid_cross_entropy(dis_fake_z_logits, 
-        #                                     tf.zeros_like(dis_fake_z_logits), name='d_fake_z')
-        # d_loss_fake_z_p = tl.cost.sigmoid_cross_entropy(dis_fake_z_p_logits,
-        #                                     tf.zeros_like(dis_fake_z_p_logits), name='d_fake_z_p')
-
-        # # hard labels for g loss
-        # g_loss_fake_z = tl.cost.sigmoid_cross_entropy(dis_fake_z_logits, 
-        #                                     tf.ones_like(dis_fake_z_logits), name='g_fake_z')
-        # g_loss_fake_z_p = tl.cost.sigmoid_cross_entropy(dis_fake_z_p_logits, 
-        #                                     tf.ones_like(dis_fake_z_p_logits), name='g_fake_z_p')
-
-        # smooth labels for g loss
-        # smoothing_mask_fake_g1 = tf.truncated_normal(dis_fake_z_logits.get_shape(), mean= 0.8, stddev=0.1)
-        # g_loss_fake_z = tl.cost.sigmoid_cross_entropy(dis_fake_z_logits, 
-        #                                     tf.ones_like(dis_fake_z_logits)*smoothing_mask_fake_g1, name='g_fake_z')
-        # smoothing_mask_fake_g2 = tf.truncated_normal(dis_fake_z_logits.get_shape(), mean= 0.8, stddev=0.1)
-        # g_loss_fake_z_p = tl.cost.sigmoid_cross_entropy(dis_fake_z_p_logits, 
-        #                                     tf.ones_like(dis_fake_z_p_logits)*smoothing_mask_fake_g2, name='g_fake_z_p')
-
-        # this maybe wrong
-        # gan_d_loss = d_loss_real + d_loss_fake_z_p #+ d_loss_fake_z
-        # gan_g_loss =  g_loss_fake_z_p #+ g_loss_fake_z  
-
-        # as akara suggests
-        # gan_d_loss = d_loss_real + d_loss_fake_z
-        # gan_g_loss =   g_loss_fake_z 
-        
-        # # same as paper 
-        # gan_d_loss = d_loss_real + 0.5*(d_loss_fake_z + d_loss_fake_z_p)
-        # # gan_g_loss =  g_loss_fake_z #+ g_loss_fake_z_p
-        # gan_g_loss =  0.5*(g_loss_fake_z + g_loss_fake_z_p)
         ''''
         reconstruction loss:
         use the learned similarity measurement in l-th layer of discriminator
         '''
-        # l_layer_loss = tf.reduce_mean(tf.square(hidden_output_z - hidden_output_real)) 
-
-        # hidden_loss = tf.reduce_mean(tf.square(z - z_fake))
-        # SSE_loss = tf.reduce_mean(tf.square(gen0.outputs - input_imgs))
         SSE_loss = tf.reduce_mean(tf.square(gen0.outputs - input_imgs))# /FLAGS.output_size/FLAGS.output_size/3
         '''
         KL divergence:
         we get z_mean,z_log_sigma_sq from encoder, then we get z from N(z_mean,z_sigma^2)
         then compute KL divergence between z and standard normal gaussian N(0,I) 
         '''
-        # train_vae
-        # KL_loss = tf.reduce_mean(- 0.5 * tf.reduce_mean(1 + tf.clip_by_value(z_log_sigma_sq,-10.0,10.0) - 
-        #                 tf.square(tf.clip_by_value(z_mean,-10.0,10.0)) - tf.exp(tf.clip_by_value(z_log_sigma_sq,-10.0,10.0)),1))
-        # train_vae2
         KL_loss = tf.reduce_mean(- 0.5 * tf.reduce_sum(1 + z_log_sigma_sq - tf.square(z_mean) - tf.exp(z_log_sigma_sq),1))
 
         ### important points! ###
-        # KL_weight = 1.0
-        # # LL_weight = 1.0 # 19th July 10:05
-        # LL_weight = 0.5 #0.5
-        # Loss_encoder = tf.clip_by_value(KL_weight * KL_loss + 0.5*(l_layer_loss + SSE_loss),-100.0,100.0)
-        # Loss_generator = tf.clip_by_value(0.5*(l_layer_loss + SSE_loss) + gan_g_loss,-100.0,100.0)
-
-        # VAE_loss = KL_loss + SSE_loss # train_vae
+        # the weight between style loss(KLD) and contend loss(pixel-wise mean square error)
         VAE_loss = 0.005*KL_loss + SSE_loss # KL_loss isn't working well if the weight of SSE is too big
-
-        # Loss_encoder = tf.clip_by_value(KL_weight * KL_loss + SSE_loss,-100.0,100.0)
-        # Loss_generator = tf.clip_by_value(gan_g_loss + SSE_loss,-100.0,100.0)
-        # Loss_discriminator = tf.clip_by_value(gan_d_loss,-100.0,100.0)
 
         e_vars = tl.layers.get_variables_with_name('encoder',True,True)
         g_vars = tl.layers.get_variables_with_name('generator', True, True)
@@ -197,17 +107,9 @@ def main(_):
         net_out1.print_params(False)
         print("-------generator-------")
         gen0.print_params(False)
-        # print("-------discriminator--------")
-        # dis.print_params(False)
-        # print("---------------")
+
 
         # optimizers for updating encoder, discriminator and generator
-        # e_optim = tf.train.AdamOptimizer(lr_e, beta1=FLAGS.beta1) \
-        #                   .minimize(Loss_encoder, var_list=e_vars)
-        # d_optim = tf.train.AdamOptimizer(lr_d, beta1=FLAGS.beta1) \
-        #                   .minimize(Loss_discriminator, var_list=d_vars)
-        # g_optim = tf.train.AdamOptimizer(lr_g, beta1=FLAGS.beta1) \
-        #                   .minimize(Loss_generator, var_list=g_vars)
         vae_optim = tf.train.AdamOptimizer(lr_vae, beta1=FLAGS.beta1) \
                            .minimize(VAE_loss, var_list=vae_vars)
     sess = tf.InteractiveSession()
@@ -242,9 +144,6 @@ def main(_):
 
     ##========================= TRAIN MODELS ================================##
     iter_counter = 0
-    # errE = 0.0
-    # errG = 0.0
-    # errD = 0.0
 
     training_start_time = time.time()
     # use all images in dataset in every epoch
@@ -264,45 +163,10 @@ def main(_):
                 batch_images = np.array(batch).astype(np.float32)
 
                 start_time = time.time()
-                # e_current_lr = FLAGS.learning_rate * balance(np.mean(errE),-.5,15)
-                # g_current_lr = FLAGS.learning_rate * balance(np.mean(errG),-.5,15)
-                # d_current_lr = FLAGS.learning_rate * balance(np.mean(errD),-.5,15)
-                # e_current_lr = FLAGS.learning_rate
-                # g_current_lr = FLAGS.learning_rate
-                # d_current_lr = FLAGS.learning_rate
                 vae_current_lr = FLAGS.learning_rate
 
 
                 # update
-                # errE, _ = sess.run([Loss_encoder, e_optim], feed_dict={input_imgs: batch_images})
-                # errD, _ = sess.run([Loss_discriminator, d_optim], feed_dict={z: batch_z, real_images: batch_images})
-                # errG, _ = sess.run([Loss_generator, g_optim], feed_dict={z: batch_z})
-                # A, B, C, D, E = sess.run([KL_loss, l_layer_loss, gan_d_loss, gan_g_loss, SSE_loss], feed_dict = {input_imgs: batch_images, lr_e:e_current_lr, 
-                # 	lr_d:d_current_lr, lr_g:g_current_lr})
-                # print('------------------------------------')
-                # print("         KL_loss: %.8f, l_layer_loss: %.8f, gan_d_loss:%.8f, gan_g_loss:%.8f, SSE_loss:%.8f  " \
-                #         % (A, B, C, D, E))
-
-                # A, B, C, D, E = sess.run([KL_loss, hidden_loss, gan_d_loss, gan_g_loss, SSE_loss], feed_dict = {input_imgs: batch_images, lr_e:e_current_lr, 
-                #     lr_d:d_current_lr, lr_g:g_current_lr})
-                # print('------------------------------------')
-                # print("         KL_loss: %.8f, hidden_loss: %.8f, gan_d_loss:%.8f, gan_g_loss:%.8f, SSE_loss:%.8f  " \
-                #         % (A, B, C, D, E))
-
-                # A, B, C, D = sess.run([KL_loss, gan_d_loss, gan_g_loss, SSE_loss], feed_dict = {input_imgs: batch_images, lr_e:e_current_lr, 
-                #     lr_d:d_current_lr, lr_g:g_current_lr})
-                # print('------------------------------------')
-                # print("         KL_loss: %.8f, gan_d_loss:%.8f, gan_g_loss:%.8f, SSE_loss:%.8f  " \
-                #         % (A, B, C, D))
-
-                # errE, errG, errD, _, _, _ = sess.run([Loss_encoder, Loss_generator, Loss_discriminator, e_optim,
-                # 	g_optim, d_optim], feed_dict = {input_imgs: batch_images, lr_e:e_current_lr, 
-                # 	lr_d:d_current_lr, lr_g:g_current_lr})
-                # errD, _ = sess.run([Loss_discriminator, d_optim], feed_dict={input_imgs: batch_images, lr_d:d_current_lr})
-                # for i in range(2):
-                #     errG, _ = sess.run([Loss_generator, g_optim], feed_dict={input_imgs: batch_images, lr_g:g_current_lr})
-                # errE, _ = sess.run([Loss_encoder, e_optim], feed_dict={input_imgs: batch_images, lr_e:e_current_lr})
-
                 kl, sse, errE, _ = sess.run([KL_loss,SSE_loss,VAE_loss,vae_optim], feed_dict={input_imgs: batch_images, lr_vae:vae_current_lr})
 
 
