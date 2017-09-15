@@ -3,7 +3,7 @@ Hereby we present place VAE and modified VAE model, both of which are trained on
 ## Result:
 ### plain VAE
 <div align="center">
-    <img src="https://github.com/yzwxx/vae-celebA/blob/master/vae_input.png" width="48"/>  
+    <img src="https://github.com/yzwxx/vae-celebA/blob/master/vae_input.png" width="200"/>  
 </div>
 
 <div align="center">
