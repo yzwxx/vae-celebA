@@ -84,7 +84,7 @@ def main(_):
         ##========================= DEFINE TRAIN OPS =======================##
         ''''
         reconstruction loss:
-        use the learned similarity measurement in l-th layer of discriminator
+        use the pixel-wise mean square error in image space
         '''
         SSE_loss = tf.reduce_mean(tf.square(gen0.outputs - input_imgs))# /FLAGS.output_size/FLAGS.output_size/3
         '''
