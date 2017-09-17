@@ -1,5 +1,5 @@
 # vae-celebA
-Hereby we present place VAE and modified VAE model, both of which are trained on celebA dataset to synthesize facial images.
+Hereby we present plain VAE and modified VAE model, both of which are trained on celebA dataset to synthesize facial images.
 ## Result:
 ### plain VAE
 <div align="center">
