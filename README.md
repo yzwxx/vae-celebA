@@ -38,6 +38,6 @@ In loss function we used a vgg loss.Check this **[how to load and use a pretrain
 Firstly, download the [celebA dataset](http://mmlab.ie.cuhk.edu.hk/projects/CelebA.html) and [VGG-16 weights](http://www.cs.toronto.edu/%7Efrossard/post/vgg16/).
 After installing all the third-party packages required, we can train the models by:  
 ```python
-python vae_train.py # for plain VAE
+python train_vae.py # for plain VAE
 python train_dfc_vae.py # for DFC-VAE
 ```
